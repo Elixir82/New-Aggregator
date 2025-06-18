@@ -26,7 +26,7 @@ function NewsCard() {
     fetchNews();
 
 
-  }, [query,page]);
+  }, [query]);
 
   if (!loading && articles.length === 0) {
     return (
@@ -36,23 +36,23 @@ function NewsCard() {
     );
   }
 
-  React.useEffect(()=>{
+  // React.useEffect(()=>{
 
-    if(!loderRef.current||!loading) return;
+  //   if(!loderRef.current||!loading) return;
 
-    let observer=new IntersectionObserver(async (entires)=>{
-      const entry=entires[0];
-      if(entry.isIntersecting){
-        setPage(prev=>prev+1);
-      }
-    },{root:null,rootMargin:'0px 0px 300px 0px',threshold:0});
+  //   let observer=new IntersectionObserver(async (entires)=>{
+  //     const entry=entires[0];
+  //     if(entry.isIntersecting){
+  //       setPage(prev=>prev+1);
+  //     }
+  //   },{root:null,rootMargin:'0px 0px 300px 0px',threshold:0});
 
-    observer.observe(loderRef.current);
+  //   observer.observe(loderRef.current);
 
-    return ()=>{
-      if(loderRef.current) observer.unobserve(loderRef.current);
-    }
-  },[]);
+  //   return ()=>{
+  //     if(loderRef.current) observer.unobserve(loderRef.current);
+  //   }
+  // },[]);
 
 
 
