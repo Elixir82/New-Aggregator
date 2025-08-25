@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useQuery } from '../context/queryContext';
-
+import { useAPIcontext } from '../context/apiContext';
 function SearchBar() {
   const [search, setSearch] = React.useState('');
   const { setQuery } = useQuery();
   const inputRef = React.useRef(null);
-
+  let {APIStatus} = useAPIcontext();
   const handleSubmit = (e) => {
     e.preventDefault();
     if (search.trim()) {
@@ -41,12 +41,12 @@ function SearchBar() {
       </form>
 
       {/* API Exhaustion Message */}
-      <div className="mt-4 text-center bg-red-100 text-red-600 border border-red-300 rounded-xl py-3 px-5 shadow-sm animate-pulse">
+      {APIStatus&&(<div className="mt-4 text-center bg-red-100 text-red-600 border border-red-300 rounded-xl py-3 px-5 shadow-sm animate-pulse">
         <p className="text-sm font-medium">
           This month's API calls are exhausted. <br />
           <span className="italic">Sorry for the inconvenience.</span>
         </p>
-      </div>
+      </div>)}
     </div>
   );
 }
