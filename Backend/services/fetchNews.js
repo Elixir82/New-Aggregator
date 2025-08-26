@@ -5,7 +5,7 @@ const fetchNewsFromAPI = async (query = 'India',type='search') => {
 
   const options = {
     method: 'GET',
-    url: `https://real-time-news-data.p.rapidapi.com/search?query=${query}`,
+    url: `https://real-time-news-data.p.rapidapi.com/search`,
     params: {
       query: query,
       limit: '20',
