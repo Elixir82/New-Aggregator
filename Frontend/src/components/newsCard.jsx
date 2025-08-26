@@ -8,6 +8,8 @@ function NewsCard() {
   const [loading, setLoading] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [headlines, setHeadlines] = React.useState([]);
+  const [headlinesLoading, setHeadlinesLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
   let { query } = useQuery();
   let { setAPIStatus } = useAPIcontext();
 
@@ -44,42 +46,10 @@ function NewsCard() {
         console.log('Error in fetching articles for frontend:', error);
       } finally {
         clearInterval(intervalId);
-
         setProgress(100);
         setTimeout(() => {
           setLoading(false);
         }, 400);
-      }
-    };
-
-    const fetchHeadline = async () => {
-      try {
-        setLoading(true);
-
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/headlines`
-        );
-
-        if (response.data && response.data.data) {
-          setHeadlines(response.data.data);
-        } else {
-          throw new Error('Invalid response structure');
-        }
-
-      } catch (error) {
-        
-        console.error('Failed to fetch headlines:', error);
-
-        setError(
-          error.response?.data?.message ||
-          error.message ||
-          'Failed to load headlines. Please try again later.'
-        );
-
-        setHeadlines([]);
-
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -89,16 +59,132 @@ function NewsCard() {
     return () => clearInterval(intervalId);
   }, [query, setAPIStatus]);
 
+  // Fetch headlines on component mount
+  React.useEffect(() => {
+    const fetchHeadlines = async () => {
+      try {
+        setHeadlinesLoading(true);
+        setError(null);
+
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/headlines`
+        );
+
+        if (response.data && response.data.data && response.data.data.data) {
+          setHeadlines(response.data.data.data);
+        } else {
+          throw new Error('Invalid response structure');
+        }
+
+      } catch (error) {
+        console.error('Failed to fetch headlines:', error);
+        setError(
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to load headlines. Please try again later.'
+        );
+        setHeadlines([]);
+      } finally {
+        setHeadlinesLoading(false);
+      }
+    };
+
+    fetchHeadlines();
+  }, []);
+
+  const HeadlinesScroller = () => (
+    <div className="mb-8">
+      <h2 className="text-xl font-bold mb-4 text-gray-800">Top Headlines</h2>
+      
+      {headlinesLoading ? (
+        <div className="flex space-x-4 overflow-hidden">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="flex-shrink-0 w-80 bg-gray-200 rounded-lg animate-pulse">
+              <div className="h-40 bg-gray-300 rounded-t-lg"></div>
+              <div className="p-4">
+                <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+          {error}
+        </div>
+      ) : headlines.length > 0 ? (
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex space-x-4 pb-4" style={{ width: 'max-content' }}>
+            {headlines.map((headline, index) => (
+              <div
+                key={headline.link || index}
+                className="flex-shrink-0 w-80 bg-white shadow-md rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+              >
+                {headline.photo_url && (
+                  <img
+                    src={headline.photo_url}
+                    alt={headline.title || 'News'}
+                    className="w-full h-40 object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-sm text-gray-800 line-clamp-2 mb-2">
+                    {headline.title}
+                  </h3>
+                  {headline.snippet && (
+                    <p className="text-gray-600 text-xs line-clamp-2 mb-2">
+                      {headline.snippet}
+                    </p>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">
+                      {headline.source || 'News Source'}
+                    </span>
+                    {headline.published_datetime_utc && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(headline.published_datetime_utc).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  {headline.link && (
+                    <a
+                      href={headline.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-2 text-xs font-medium text-blue-600 hover:underline"
+                    >
+                      Read more →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-gray-500 text-sm">No headlines available</div>
+      )}
+    </div>
+  );
+
   if (!loading && articles.length === 0) {
     return (
-      <div className="text-center text-gray-500 mt-10">
-        No articles found for <span className="font-semibold">{query}</span>.
-      </div>
+      <>
+        <HeadlinesScroller />
+        <div className="text-center text-gray-500 mt-10">
+          No articles found for <span className="font-semibold">{query}</span>.
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      <HeadlinesScroller />
+      
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64 space-y-6">
           {/* Animated progress bar with gradient */}
